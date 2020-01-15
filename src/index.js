@@ -97,11 +97,11 @@ function updateButtonText(newGoodDogBadDogButton){
 function filterDogBar (event){
     if (event.target.classList.contains("OFF")) {
         event.target.classList.toggle("OFF")
-        event.target.innerText = "Filter good dogs: ON"
+        event.target.innerText = "Filter good dogs: OFF"
         loadPupsToBar()
     } else {
         event.target.classList.toggle("OFF")
-        event.target.innerText = "Filter good dogs: OFF"
+        event.target.innerText = "Filter good dogs: ON"
         get(PUPS_BASE_URL).then(pups=>pups.filter(function(item){
             return item.isGoodDog
         }))
