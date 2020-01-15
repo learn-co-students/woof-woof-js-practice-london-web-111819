@@ -1,4 +1,5 @@
-document.addEventListener("DOMContentLoaded",function(){
+document.addEventListener('DOMContentLoaded', function(){
+
 //HELPER APIS
 function get(URI) {
     return fetch(URI).then(response=>response.json())
@@ -34,94 +35,84 @@ function patch(URI,id,patchObj){
         };
         return fetch(`${URI}${id}`,patchData).then(response=>response.json())
 }
-
 //CONSTANTS
+const DOG_BAR = document.getElementById("dog-bar")
 const PUPS_BASE_URL = "http://localhost:3000/pups/"
-const DOGBAR = document.getElementById("dog-bar")
-const DOG_SUMMARY_CONTAINER = document.getElementById("dog-summary-container")
-const DOG_INFO = document.getElementById("dog-info")
-const GOOD_DOG_FILTER = document.getElementById("good-dog-filter")
-const EXISTING_H1 = document.querySelector("#dog-summary-container > h1")
-GOOD_DOG_FILTER.classList.add("OFF")
+const H1_IN_DOG_SUMMARY_CONTAINER = document.querySelector("#dog-summary-container > h1")
+const DOG_INFO_DIV = document.getElementById("dog-info")
+const GOOD_DOG_FILTER_BUTTON = document.getElementById("good-dog-filter")
 
 //FUNCTIONS
-function initialLoad(){
-    get(PUPS_BASE_URL).then(pups=>pups.forEach(renderPupToPage))
+function loadPupsToBar(){
+    get(PUPS_BASE_URL).then(showPupsInBar)
 }
 
-function renderPupToPage(pup){
-    let newSpan = document.createElement('span')
+function showPupsInBar(pups){
+    DOG_BAR.innerHTML =""
+    pups.forEach(putOneOfThePupInTheBar)
+}
+
+function putOneOfThePupInTheBar(pup){
+    let newSpan = document.createElement("span")
     newSpan.innerText = pup.name
-    newSpan.addEventListener("click",function(event){
-        populateDogSummaryContainer(pup)
-    })
-    DOGBAR.appendChild(newSpan)
+    newSpan.addEventListener("click",()=>populateDogInfoWithThisPup(pup))
+    DOG_BAR.appendChild(newSpan)
 }
 
-function populateDogSummaryContainer(pup){
+function populateDogInfoWithThisPup(pup){
+    H1_IN_DOG_SUMMARY_CONTAINER.innerText = pup.name
     let newImg = document.createElement('img')
     newImg.src = pup.image
-    let newBreak = document.createElement('br')
-    let newGoodBadButton = document.createElement('button')
+    let newH2 = document.createElement('h2')
+    newH2.innerText = pup.name
+    let newGoodDogBadDogButton = document.createElement('button')
     if (pup.isGoodDog) {
-        newGoodBadButton.innerText = "Good Dog"
+        newGoodDogBadDogButton.innerText = "Good Dog"
+        newGoodDogBadDogButton.classList.add("GOOD")
     } else {
-        newGoodBadButton.innerText = "Bad Dog"
+        newGoodDogBadDogButton.innerText = "Bad Dog"
     }
-    newGoodBadButton.addEventListener("click",function(event){
-        toggleActions(pup,newGoodBadButton)
-    })
-    EXISTING_H1.innerText = pup.name
-    DOG_INFO.innerHTML = ""
-    DOG_INFO.append(newImg,newBreak,newGoodBadButton)
-    DOG_SUMMARY_CONTAINER.append(DOG_INFO)
-    
+    newGoodDogBadDogButton.addEventListener("click",()=>patchDogStateAndUpdateButton(pup,newGoodDogBadDogButton))
+    DOG_INFO_DIV.innerHTML = ""
+    DOG_INFO_DIV.append(newImg,newH2,newGoodDogBadDogButton)
 }
 
-function toggleActions(pup,newGoodBadButton){
-    //START WITH CONSTRUCTING PATCH OBJ
-    let objectToSend;
-    if (newGoodBadButton.innerText == "Good Dog") {
-        objectToSend = {
-            isGoodDog: false
-        }
-    } else {
-        objectToSend = {
-            isGoodDog: true
-        }
+function patchDogStateAndUpdateButton(pup,newGoodDogBadDogButton){
+    let patchObj = {
+        isGoodDog: !pup.isGoodDog
     }
-    patch(PUPS_BASE_URL,pup.id,objectToSend).then(updatedPup=>updateButton(updatedPup,newGoodBadButton))
-    //CALL PATCH OBJ
-    //ONCE RESPONSE RECEIVED UPDATE BUTTON
+    patch(PUPS_BASE_URL,pup.id,patchObj).then(updateButtonText(newGoodDogBadDogButton))
 }
 
-function updateButton(updatedpup,newGoodBadButton){
-    if (newGoodBadButton.innerText == "Good Dog"){
-        newGoodBadButton.innerText = "Bad Dog"
+function updateButtonText(newGoodDogBadDogButton){
+    if (newGoodDogBadDogButton.classList.contains("GOOD")){
+        newGoodDogBadDogButton.innerText = "Bad Dog!"
+        newGoodDogBadDogButton.classList.toggle("GOOD")
     } else {
-        newGoodBadButton.innerText = "Good Dog"
+        newGoodDogBadDogButton.innerText = "Good Dog!"
+        newGoodDogBadDogButton.classList.toggle("GOOD")
     }
 }
 
-//LOADERS,EVENTLISTENERS
-initialLoad()
-
-GOOD_DOG_FILTER.addEventListener("click",function(event){
-    //check if the class list includes OFF. 
-    debugger
-    if (event.target.classList.contains("OFF")){
-        // FILTER NOW!
-        DOGBAR.innerHTML=""
-        get(PUPS_BASE_URL).then(pups=>pups.filter(function(pup){return pup.isGoodDog})).then(pups=>pups.forEach(renderPupToPage))
+function filterDogBar (event){
+    if (event.target.classList.contains("OFF")) {
         event.target.classList.toggle("OFF")
-        event.target.innerText = "Filter Good Dogs: ON"
+        event.target.innerText = "Filter good dogs: ON"
+        loadPupsToBar()
     } else {
-        // DO NOT FILTER NOW!
-        DOGBAR.innerHTML=""
-        initialLoad()
         event.target.classList.toggle("OFF")
-        event.target.innerText = "Filter Good Dogs: OFF"
+        event.target.innerText = "Filter good dogs: OFF"
+        get(PUPS_BASE_URL).then(pups=>pups.filter(function(item){
+            return item.isGoodDog
+        }))
+        .then(showPupsInBar)
     }
-})
+
+}
+
+//INITIALLOADERS, UNRELATED EVENT LISTENERS
+loadPupsToBar()
+GOOD_DOG_FILTER_BUTTON.classList.add("OFF")
+GOOD_DOG_FILTER_BUTTON.addEventListener("click",filterDogBar)
 
 })
